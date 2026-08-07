@@ -74,8 +74,10 @@ services:
 
   # A standalone RAG service shared at the contract/infrastructure level.
   # PGTableGraphStorage avoids requiring Apache AGE; pgvector backs vectors.
+  # It is opt-in: `docker compose --profile rag-lightrag up -d`.
   # OpenMAIC does not consume this service without a future Producer Adapter.
   lightrag:
+    profiles: ["rag-lightrag"]
     image: ghcr.io/hkuds/lightrag:v1.5.6
     restart: unless-stopped
     environment:

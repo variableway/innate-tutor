@@ -61,6 +61,7 @@ InnateTutor 的产品闭环应定义为：
 | [06 Phase 任务清单](./06-phase-task-checklists.md) | 可以直接进入 issue tracker 的任务与验收条件 |
 | [07 质量、安全与运维](./07-quality-security-operations.md) | 测试、AI Eval、安全、SLO、观测和发布要求 |
 | [08 快速验证与双轨演进](./08-fast-validation-parallel-evolution.md) | 如何让课程生成/Catalog 与 DeepTutor/RAG 集成独立推进并按 Gate 汇合 |
+| [09 无 RAG 与 Provider 策略](./09-optional-rag-provider-strategy.md) | 第一阶段如何无 RAG 运行，以及未来如何选择、替换和迁移检索系统 |
 
 ## 5. 推荐阅读与决策顺序
 

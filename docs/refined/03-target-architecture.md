@@ -10,6 +10,7 @@
 6. **重任务异步，交互任务流式。** 课程生产使用 durable queue；Tutor 使用 SSE/WebSocket；二者不混用生命周期。
 7. **身份由服务端派生。** 永不信任浏览器提交的 tenant/user/learner key。
 8. **成本与质量是合同的一部分。** 每个 AI 操作都有 budget、trace、模型版本、输入来源和评估结果。
+9. **RAG 是可选能力，不是产品前置条件。** 默认可用当前 CourseArtifact/scene direct context；检索只能通过可替换的 port 接入。
 
 ## 2. 系统上下文
 
@@ -67,6 +68,7 @@ flowchart TB
   subgraph Tutor["Tutor Intelligence Plane"]
     AgentGateway["Agent Gateway"]
     Context["Context Assembler"]
+    Retrieval["RagProviderPort optional"]
     DTAdapter["DeepTutor Adapter"]
     DTRuntime["DeepTutorApp / Agent Loop"]
     Memory["Memory Projection"]
@@ -93,13 +95,16 @@ flowchart TB
   OMRuntime <--> HostBridge
   OMRuntime --> RuntimeAdapter --> EventAPI
   AgentGateway --> Context --> DTAdapter --> DTRuntime
+  Context -. "optional retrieval" .-> Retrieval
   EventAPI --> Projection
   EventAPI --> Memory
-  Context --> Catalog & Projection & Vec & Memory
+  Context --> Catalog & Projection & Memory
 
   Identity & Catalog & JobAPI & EventAPI & Projection & Provider --> PG
   Catalog & Worker --> Obj
-  Grounding & DTAdapter --> Vec
+  Grounding -. "optional" .-> Retrieval
+  DTAdapter -. "optional" .-> Retrieval
+  Retrieval --> Vec
   Queue --> PG
   AgentGateway -. "short-lived cache" .-> Cache
 ```
@@ -111,11 +116,13 @@ flowchart TB
 | `web` | Next.js 16 / TypeScript | UI、BFF、身份、课程/事件 API、runtime launch | 2 副本或平台托管 |
 | `course-worker` | Node.js 20+ | durable generation job、OpenMAIC producer adapter、artifact 校验 | 1–N worker，按队列伸缩 |
 | `openmaic-runtime` | 固定 OpenMAIC Next.js | 完整课堂播放/编辑、Quiz/PBL/Action runtime | Pilot 1 副本；无状态化后扩容 |
-| `agent-service` | Python 3.11 + DeepTutor | Agent turn、RAG、Memory projection、工具策略 | Pilot 1 副本 + 持久卷 |
+| `agent-service` | Python 3.11 + DeepTutor | Agent turn、direct context、可选 RAG、Memory projection、工具策略 | Pilot 1 副本 + 持久卷 |
 | `postgres` | PostgreSQL 16 | 身份映射、课程、job、event、projection、audit、cost | 托管单主 + PITR |
 | `object-store` | S3/OSS/MinIO | 原材料、不可变 artifact、媒体、导出 | 托管或单 MinIO |
 
 MVP 使用 Postgres-backed queue（如 pg-boss/Graphile Worker 一类）即可，减少 Redis + BullMQ + Celery 的多套运维。只有吞吐或 Python 后台任务证明需要时，再拆独立 broker。
+
+快速验证阶段不要求 `object-store`、`course-worker`、`agent-service` 或 Vector Index 全部独立部署。默认可直接运行 OpenMAIC + DeepTutor，并把当前 scene 文本作为 Tutor context；Vector/RAG 仅在长文档、私有知识或引用需求出现时启用。
 
 ## 5. 三 Plane 的职责
 

@@ -6,6 +6,7 @@
 | --- | --- | --- | --- |
 | Identity & Tenant | tenant、user、membership、role、service token | 课程内容、Provider secret 本体 | 自研 + OIDC |
 | Knowledge Ingest | upload、parse job、SourceDocument、SourceRef、KB binding | 生成课程、回答问题 | DeepTutor parser/RAG adapter |
+| Retrieval Provider | ingest/retrieve/delete/health、SourceRef normalize | 课程主数据、用户身份、业务授权 | 可选 DeepTutor local/LightRAG/其他服务 |
 | Course Catalog | Course、Draft、Version、Review、Publish、Enrollment | LLM 生成执行 | 自研 |
 | Generation Orchestrator | Job/Step、lease、retry、budget、checkpoint | UI 编辑、学习进度 | 自研 + OpenMAIC producer adapter |
 | Artifact Quality | schema、引用、Quiz、资产、安全校验 | 业务审批决定 | `@openmaic/dsl` + app validator + 自研 eval |
@@ -38,6 +39,8 @@ flowchart TB
 
   Generation --> OpenAdapter["OpenMAIC Adapter"]
   Agent --> DeepAdapter["DeepTutor Adapter"]
+  Agent -. "optional" .-> Retrieval["RagProviderPort"]
+  Generation -. "optional" .-> Retrieval
   Learning --> RuntimeAdapter["OpenMAIC Runtime Adapter"]
 
   OpenAdapter --> OpenMAIC["Pinned OpenMAIC"]
@@ -225,6 +228,22 @@ class TutorEnginePort(Protocol):
 - 工具和 Knowledge Base allowlist。
 
 业务层不调用 `plugins/.../execute-stream` playground route，也不依赖具体内部 class path。
+
+### 5.4 可选 Retrieval Provider
+
+无 RAG 模式使用当前课程版本、scene 和 selection 作为 direct context，不调用该 port。需要长文档、跨资料或引用时，Agent/Generation 只依赖统一合同：
+
+```python
+class RagProviderPort(Protocol):
+    async def health(self) -> RagHealth: ...
+    async def ingest(self, source: SourceDocumentRef) -> IngestHandle: ...
+    async def retrieve(self, request: RetrievalRequest) -> list[RetrievalChunk]: ...
+    async def delete(self, source_id: str) -> None: ...
+```
+
+`RetrievalChunk` 只暴露稳定字段：`sourceRefId`、`text`、`locator`、`score`、`contentHash`、`providerTraceRef`。业务层不能读取 Provider 私有 collection/table/vector ID。
+
+替换 Provider 时必须重新索引原始 SourceDocument，不能假设不同 Embedding/Vector/Graph 引擎的索引兼容。推荐使用 shadow ingest/retrieve → citation/quality 对比 → tenant feature flag cutover → 保留旧索引回滚的迁移顺序。
 
 ## 6. API 设计
 

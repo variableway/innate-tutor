@@ -16,6 +16,7 @@
 - [各 Phase 任务清单](./refined/06-phase-task-checklists.md)
 - [质量、安全与运维方案](./refined/07-quality-security-operations.md)
 - [快速验证与双轨演进计划](./refined/08-fast-validation-parallel-evolution.md)
+- [无 RAG 默认模式与可替换 Provider 策略](./refined/09-optional-rag-provider-strategy.md)
 - [本地 Compose 快速启动说明](./local-compose-quickstart.md)
 
 ## 原有调研文档

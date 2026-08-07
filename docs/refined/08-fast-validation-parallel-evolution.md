@@ -9,7 +9,7 @@
 1. 快速课程链路不能依赖 DeepTutor、RAG、统一身份或学习进度。
 2. 两个上游固定版本，第一阶段不修改其任务代码。
 3. “共享数据库”只表示同一 PostgreSQL 基础设施，必须隔离逻辑数据库/schema 和 migration ownership。
-4. “共享 RAG”表示独立 LightRAG HTTP 服务；OpenMAIC 当前不会自动使用它。
+4. 第一阶段默认不安装或启动 RAG；需要检索时才启用可替换的 Provider。
 5. DeepTutor/OpenMAIC 深度集成只通过 Adapter 和版本化 contract 汇合。
 6. 快速原型可以保存 `courseId + classroomUrl`，但进入长期产品前必须补齐不可变 CourseArtifact、校验和与资产归档。
 
@@ -25,7 +25,7 @@ flowchart LR
   end
 
   subgraph B["Track B · Tutor Platform Integration"]
-    B1["DeepTutor Standalone"] --> B2["LightRAG Contract"]
+    B1["DeepTutor Standalone / No RAG"] --> B2["Optional Retrieval Provider"]
     B2 --> B3["Agent Adapter"]
     B3 --> B4["Identity / Event / Memory"]
   end
@@ -70,8 +70,8 @@ Track A 在没有 Track B 的情况下已经能验证：课程是否能生成、
 顺序为：
 
 1. DeepTutor 独立运行和模型配置；
-2. LightRAG 独立建库、检索和引用验证；
-3. DeepTutor 连接 LightRAG Server；
+2. 先用当前 scene direct context 验证无 RAG Tutor；
+3. 有明确长文档/引用需求后，再选择本地 LlamaIndex、LightRAG 或其他 Provider；
 4. 用固定课程 fixture 做 scene-aware Tutor；
 5. 新增 Agent Adapter，规范化 session/turn/stream/citation；
 6. 最后才接统一身份、LearningEvent、Memory 和 Mastery。
@@ -80,13 +80,13 @@ Track A 在没有 Track B 的情况下已经能验证：课程是否能生成、
 
 | Phase | 时间参考 | Track | 目标 | 退出条件 |
 | --- | --- | --- | --- | --- |
-| F0 · Compose Contract | 0.5–1 天 | A/B 基础 | 一套配置描述四服务和数据边界 | `docker compose config` 通过；无需现在启动 |
+| F0 · Compose Contract | 0.5–1 天 | A/B 基础 | 默认三服务无 RAG；可选检索 profile | 默认/profile 的 `docker compose config` 均通过 |
 | F1 · Generation Smoke | 1–2 天 | A | 生成并查看 3 门短课程 | 3/3 可打开；记录耗时、失败和 URL |
 | F2 · Batch Benchmark | 2–3 天 | A | 10 个主题/材料的快速生成评估 | 输出 JSON/Markdown 报告和质量 rubric |
 | F3 · Thin Catalog | 3–7 天 | A | 独立 APP 统一查看课程 | 提交、轮询、列表、打开、错误恢复可用 |
 | F4 · Artifact Baseline | 2–5 天 | A | 从 URL 记录演进到版本化产出物 | manifest/schema/version/checksum/asset check 通过 |
-| T1 · Tutor Standalone | 1–2 天 | B | DeepTutor 独立问答 | 20 个基础问题流式完成并记录故障 |
-| T2 · Shared RAG Spike | 2–4 天 | B | LightRAG ingest/retrieve + DeepTutor 连接 | 引用可回到原材料；重启后索引可用 |
+| T1 · Tutor Standalone | 1–2 天 | B | DeepTutor 无 RAG、当前 scene 问答 | 20 个基础问题流式完成并记录故障 |
+| T2 · Optional RAG Spike | 2–4 天 | B | 选一个 Provider ingest/retrieve + DeepTutor 连接 | 引用可回到原材料；重启后索引可用 |
 | T3 · Scene-aware Adapter | 3–5 天 | B→A | 当前课程/scene/selection 上下文问答 | 浏览器伪造正文不进入 trusted prompt |
 | T4 · Product Integration | 1–2 周 | 汇合 | Tutor Panel、session mapping、引用跳转 | 课程播放不依赖 Tutor；Tutor 故障可降级 |
 | T5 · Production Data | 2–4 周 | 汇合 | 身份、事件、进度、审计、预算 | 跨用户负向测试、重放和恢复通过 |
@@ -97,13 +97,13 @@ Track A 在没有 Track B 的情况下已经能验证：课程是否能生成、
 
 ### F0 · Compose Contract
 
-- [ ] **P0F-01** 固定 DeepTutor/OpenMAIC/LightRAG/PostgreSQL 版本或源码 commit。
+- [ ] **P0F-01** 固定 DeepTutor/OpenMAIC/PostgreSQL 版本；可选 LightRAG 也必须固定版本。
 - [ ] **P0F-02** 定义一个 PostgreSQL 实例、`innate/openmaic/lightrag` 三个逻辑数据库。
-- [ ] **P0F-03** 给 OpenMAIC classroom data、DeepTutor workspace、LightRAG scratch 分配独立 volume。
-- [ ] **P0F-04** 统一本地 OpenAI-compatible LLM/Embedding 配置模板，不提交 secret。
+- [ ] **P0F-03** 给 OpenMAIC classroom data、DeepTutor workspace、可选 RAG scratch 分配独立 volume。
+- [ ] **P0F-04** 默认只要求 LLM；Embedding/RAG 配置放入可选 profile，不提交 secret。
 - [ ] **P0F-05** 所有宿主端口仅绑定 `127.0.0.1`。
 - [ ] **P0F-06** 写明 OpenMAIC 不自动调用 RAG、DeepTutor 不自动使用 PostgreSQL。
-- [ ] **P0F-07** 用静态 Compose config 校验变量、依赖、volume 和 healthcheck。
+- [ ] **P0F-07** 分别静态校验默认无 RAG和可选 RAG profile 的变量、依赖、volume、healthcheck。
 
 ### F1–F2 · 课程生成验证
 
@@ -127,9 +127,9 @@ Track A 在没有 Track B 的情况下已经能验证：课程是否能生成、
 
 ### T1–T3 · Tutor/RAG Spike
 
-- [ ] **P0T-01** 配置 DeepTutor 单用户模式和一个 LLM/Embedding Provider。
-- [ ] **P0T-02** 在 LightRAG 导入可信材料，固定 workspace 和 embedding signature。
-- [ ] **P0T-03** DeepTutor 通过 `http://lightrag:9621` 连接外部 KB。
+- [ ] **P0T-01** 配置 DeepTutor 单用户模式和一个 LLM，不配置 KB/Embedding。
+- [ ] **P0T-02** 先验证当前 scene/selection direct context 问答和无出处回答边界。
+- [ ] **P0T-03** 只有命中长文档/引用触发条件时才选择并启用 RAG Provider。
 - [ ] **P0T-04** 验证 top-k 内容、source locator、中文问题和无答案问题。
 - [ ] **P0T-05** 用 F4 fixture 定义 `courseVersionId/sceneId/selection/SourceRef` 输入。
 - [ ] **P0T-06** 只通过 `DeepTutorApp` 或 `/api/v1/ws` 实现 Adapter。
@@ -153,7 +153,9 @@ Track A 在没有 Track B 的情况下已经能验证：课程是否能生成、
 当前 Compose 是 F0 交付物，不是最终生产拓扑：
 
 - 允许只启动 `postgres openmaic` 走 Track A；
-- 完整启动时额外运行 DeepTutor 和 LightRAG；
+- 默认 `docker compose up` 启动 OpenMAIC、DeepTutor、PostgreSQL，不启动 RAG；
+- `--profile rag-lightrag` 才额外安装并启动内置 LightRAG；
+- 替换为外部/其他 RAG 时保持该 profile 关闭，通过 `RagProviderPort` 接入；
 - PostgreSQL 共享实例但不共享上游表；
 - LightRAG 通过 API 共享，不允许两个项目直接操作其数据库；
 - 所有服务保持单实例和本地可信网络；
