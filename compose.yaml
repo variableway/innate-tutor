@@ -1,0 +1,163 @@
+name: innate-tutor
+
+# Local validation stack only. It intentionally keeps the two upstream projects
+# unchanged and joins them through infrastructure and HTTP contracts.
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: innate
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-innate-local-dev}
+      POSTGRES_DB: innate
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./infra/postgres/init/01-create-databases.sql:/docker-entrypoint-initdb.d/01-create-databases.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U innate -d innate"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+    networks:
+      - innate
+
+  # OpenMAIC is built from the checked-out v0.3.1 source. PostgreSQL persistence
+  # is enabled at build time; generated classroom JSON/media still live in
+  # /app/data and are persisted by openmaic-data.
+  openmaic:
+    build:
+      context: ./OpenMAIC
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_PERSISTENCE: "1"
+        NEXT_PUBLIC_PERSISTENCE_TOKEN: ${OPENMAIC_PERSISTENCE_TOKEN:-openmaic-local-dev}
+        NEXT_PUBLIC_MAIC_EDITOR_ENABLED: ${OPENMAIC_EDITOR_ENABLED:-}
+        NEXT_PUBLIC_PI_CHAT_ENABLED: ${OPENMAIC_PI_CHAT_ENABLED:-}
+        NEXT_PUBLIC_SHOW_VOCATIONAL_TEST_UI: ${OPENMAIC_VOCATIONAL_TEST_UI:-}
+        NEXT_PUBLIC_ENABLE_VIDEO_EXPORT: ""
+        NEXT_PUBLIC_VIDEO_EXPORT_CTA_DESTINATION: ""
+        NEXT_PUBLIC_ENABLE_PPTX_IMPORT: ${OPENMAIC_PPTX_IMPORT_ENABLED:-}
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://innate:${POSTGRES_PASSWORD:-innate-local-dev}@postgres:5432/openmaic
+      PERSISTENCE_DEV_TOKEN: ${OPENMAIC_PERSISTENCE_TOKEN:-openmaic-local-dev}
+      OPENAI_API_KEY: ${LLM_API_KEY:-}
+      OPENAI_BASE_URL: ${LLM_BASE_URL:-https://api.openai.com/v1}
+      OPENAI_MODELS: ${LLM_MODEL:-gpt-5.4-mini}
+      DEFAULT_MODEL: openai:${LLM_MODEL:-gpt-5.4-mini}
+      ACCESS_CODE: ${OPENMAIC_ACCESS_CODE:-}
+      TZ: ${TZ:-Asia/Shanghai}
+    ports:
+      - "127.0.0.1:${OPENMAIC_PORT:-3000}:3000"
+    volumes:
+      - openmaic-data:/app/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3000/api/access-code/status').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 20
+      start_period: 60s
+    networks:
+      - innate
+
+  # A standalone RAG service shared at the contract/infrastructure level.
+  # PGTableGraphStorage avoids requiring Apache AGE; pgvector backs vectors.
+  # OpenMAIC does not consume this service without a future Producer Adapter.
+  lightrag:
+    image: ghcr.io/hkuds/lightrag:v1.5.6
+    restart: unless-stopped
+    environment:
+      HOST: 0.0.0.0
+      PORT: 9621
+      WORKING_DIR: /app/data/rag_storage
+      INPUT_DIR: /app/data/inputs
+      WORKSPACE: innate_shared
+      LIGHTRAG_API_KEY: ${LIGHTRAG_API_KEY:-lightrag-local-dev}
+
+      LLM_BINDING: openai
+      LLM_BINDING_HOST: ${LLM_BASE_URL:-https://api.openai.com/v1}
+      LLM_BINDING_API_KEY: ${LLM_API_KEY:-}
+      LLM_MODEL: ${LIGHTRAG_LLM_MODEL:-${LLM_MODEL:-gpt-5.4-mini}}
+
+      EMBEDDING_BINDING: openai
+      EMBEDDING_BINDING_HOST: ${EMBEDDING_BASE_URL:-https://api.openai.com/v1}
+      EMBEDDING_BINDING_API_KEY: ${EMBEDDING_API_KEY:-}
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL:-text-embedding-3-small}
+      EMBEDDING_DIM: ${EMBEDDING_DIM:-1536}
+
+      LIGHTRAG_KV_STORAGE: PGKVStorage
+      LIGHTRAG_DOC_STATUS_STORAGE: PGDocStatusStorage
+      LIGHTRAG_GRAPH_STORAGE: PGTableGraphStorage
+      LIGHTRAG_VECTOR_STORAGE: PGVectorStorage
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: innate
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-innate-local-dev}
+      POSTGRES_DATABASE: lightrag
+      POSTGRES_MAX_CONNECTIONS: 20
+      TZ: ${TZ:-Asia/Shanghai}
+    ports:
+      - "127.0.0.1:${LIGHTRAG_PORT:-9621}:9621"
+    volumes:
+      - lightrag-data:/app/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:9621/auth-status', timeout=5)",
+        ]
+      interval: 15s
+      timeout: 8s
+      retries: 20
+      start_period: 60s
+    networks:
+      - innate
+
+  # Use the pinned pre-built image to avoid a large local DeepTutor build.
+  # DeepTutor persists its workspace, KB pointers, memory and settings in its
+  # own volume; it does not use PostgreSQL as its primary store.
+  deeptutor:
+    image: ${DEEPTUTOR_IMAGE:-ghcr.io/hkuds/deeptutor:1.5.9}
+    restart: unless-stopped
+    environment:
+      TZ: ${TZ:-Asia/Shanghai}
+    ports:
+      - "127.0.0.1:${DEEPTUTOR_BACKEND_PORT:-8001}:8001"
+      - "127.0.0.1:${DEEPTUTOR_FRONTEND_PORT:-3782}:3782"
+    volumes:
+      - deeptutor-data:/app/data
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8001/"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 90s
+    networks:
+      - innate
+
+networks:
+  innate:
+    driver: bridge
+
+volumes:
+  postgres-data:
+  openmaic-data:
+  lightrag-data:
+  deeptutor-data:
