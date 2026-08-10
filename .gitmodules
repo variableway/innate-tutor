@@ -1,6 +1,6 @@
 [submodule "DeepTutor"]
 	path = DeepTutor
-	url = https://github.com/HKUDS/DeepTutor.git
+	url = https://github.com/qdriven/DeepTutor.git
 [submodule "OpenMAIC"]
 	path = OpenMAIC
-	url = https://github.com/THU-MAIC/OpenMAIC.git
+	url = https://github.com/qdriven/OpenMAIC.git

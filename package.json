@@ -1,0 +1,14 @@
+{
+  "name": "innate-tutor",
+  "private": true,
+  "packageManager": "pnpm@10.28.0",
+  "engines": {
+    "node": ">=20.9.0"
+  },
+  "scripts": {
+    "dev": "pnpm --filter @innate/web dev",
+    "build": "pnpm -r --filter @innate/* build",
+    "lint": "pnpm -r --filter @innate/* lint",
+    "typecheck": "pnpm -r --filter @innate/* typecheck"
+  }
+}

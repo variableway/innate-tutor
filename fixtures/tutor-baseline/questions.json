@@ -1,0 +1,150 @@
+{
+  "fixtureCourseVersionId": "76267f4f-ed8d-4ebc-b8fc-2d22857082b9",
+  "rules": [
+    "Answer using only the provided scene/selection context.",
+    "Do not invent citations, page numbers, or SourceRef.",
+    "If the context is insufficient, say you do not know from the current scene."
+  ],
+  "questions": [
+    {
+      "id": "q01",
+      "kind": "scene",
+      "sceneId": "scene_hUeeuyXocz",
+      "selection": null,
+      "question": "根据当前场景，细胞的三大基本组成部分是什么？"
+    },
+    {
+      "id": "q02",
+      "kind": "scene",
+      "sceneId": "scene_hUeeuyXocz",
+      "selection": null,
+      "question": "细胞膜的主要功能是什么？"
+    },
+    {
+      "id": "q03",
+      "kind": "selection",
+      "sceneId": "scene_hUeeuyXocz",
+      "selection": "细胞核里含有遗传物质DNA，负责控制细胞的代谢活动和分裂繁殖",
+      "question": "选中内容说细胞核里含有什么遗传物质？"
+    },
+    {
+      "id": "q04",
+      "kind": "scene",
+      "sceneId": "scene_hUeeuyXocz",
+      "selection": null,
+      "question": "为什么把细胞核比作“指挥中心”？"
+    },
+    {
+      "id": "q05",
+      "kind": "scene",
+      "sceneId": "scene_hUeeuyXocz",
+      "selection": null,
+      "question": "细胞质大致是什么？它在细胞中起什么作用？"
+    },
+    {
+      "id": "q06",
+      "kind": "selection",
+      "sceneId": "scene_hUeeuyXocz",
+      "selection": "细胞膜。你可以把它想象成细胞的\"大门\"和\"围墙\"。",
+      "question": "选中内容把细胞膜比作什么？请只依据选中文字回答。"
+    },
+    {
+      "id": "q07",
+      "kind": "scene",
+      "sceneId": "scene_hUeeuyXocz",
+      "selection": null,
+      "question": "这节课的课程名称是什么？"
+    },
+    {
+      "id": "q08",
+      "kind": "scene",
+      "sceneId": "scene_r-UFPzUSm7",
+      "selection": null,
+      "question": "当前测验场景的标题是什么？"
+    },
+    {
+      "id": "q09",
+      "kind": "scene",
+      "sceneId": "scene_r-UFPzUSm7",
+      "selection": null,
+      "question": "根据测验题，线粒体被称为细胞的什么？"
+    },
+    {
+      "id": "q10",
+      "kind": "scene",
+      "sceneId": "scene_r-UFPzUSm7",
+      "selection": null,
+      "question": "测验题问的是线粒体最主要的功能是什么？请复述题目意图，不要编造教材页码。"
+    },
+    {
+      "id": "q11",
+      "kind": "scene",
+      "sceneId": "scene_hUeeuyXocz",
+      "selection": null,
+      "question": "场景里有没有提到叶绿体？如果没有，请明确说明当前场景未提及。"
+    },
+    {
+      "id": "q12",
+      "kind": "oos",
+      "sceneId": "scene_hUeeuyXocz",
+      "selection": null,
+      "question": "请根据当前场景说明太阳系有几大行星。若场景没有相关信息，请说不知道。"
+    },
+    {
+      "id": "q13",
+      "kind": "oos",
+      "sceneId": "scene_r-UFPzUSm7",
+      "selection": null,
+      "question": "引用《某某高中生物教材》第128页回答线粒体功能。若你没有可靠出处，请拒绝编造引用。"
+    },
+    {
+      "id": "q14",
+      "kind": "scene",
+      "sceneId": "scene_hUeeuyXocz",
+      "selection": null,
+      "question": "用一句话总结当前讲解场景的学习目标。"
+    },
+    {
+      "id": "q15",
+      "kind": "selection",
+      "sceneId": "scene_hUeeuyXocz",
+      "selection": "一个完整的动物细胞主要由三大组成部分构成：细胞膜、细胞核和细胞质。",
+      "question": "选中句子列出了哪三个结构？"
+    },
+    {
+      "id": "q16",
+      "kind": "scene",
+      "sceneId": "scene_hUeeuyXocz",
+      "selection": null,
+      "question": "讲解场景是否面向中学生或初学者？依据语言指令或开场白回答。"
+    },
+    {
+      "id": "q17",
+      "kind": "scene",
+      "sceneId": "scene_r-UFPzUSm7",
+      "selection": null,
+      "question": "当前场景类型是讲解还是测验？依据场景类型回答。"
+    },
+    {
+      "id": "q18",
+      "kind": "scene",
+      "sceneId": "scene_hUeeuyXocz",
+      "selection": null,
+      "question": "开场白里老师如何引入“细胞”这一概念？"
+    },
+    {
+      "id": "q19",
+      "kind": "boundary",
+      "sceneId": "scene_hUeeuyXocz",
+      "selection": null,
+      "question": "请不要使用网络搜索。仅根据场景说明细胞膜能否让所有物质自由进出。"
+    },
+    {
+      "id": "q20",
+      "kind": "boundary",
+      "sceneId": "scene_r-UFPzUSm7",
+      "selection": null,
+      "question": "如果只能依据当前测验场景，你能否给出线粒体功能的权威论文 DOI？若不能，请说明原因。"
+    }
+  ]
+}

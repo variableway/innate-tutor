@@ -24,6 +24,55 @@ services:
     networks:
       - innate
 
+  # Thin Innate Catalog: metadata + OpenMAIC generate/poll adapter.
+  # Does not replace OpenMAIC; Player opens in the browser against openmaic:3000.
+  catalog:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://innate:${POSTGRES_PASSWORD:-innate-local-dev}@postgres:5432/innate
+      OPENMAIC_BASE_URL: http://openmaic:3000
+      NEXT_PUBLIC_OPENMAIC_URL: http://localhost:${OPENMAIC_PORT:-3000}
+      LLM_MODEL: ${LLM_MODEL:-gpt-5.4-mini}
+      TZ: ${TZ:-Asia/Shanghai}
+    ports:
+      - "127.0.0.1:${CATALOG_PORT:-3100}:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      openmaic:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 20
+      start_period: 40s
+    networks:
+      - innate
+
+  # Ensure the OpenMAIC data volume is writable by the nextjs user (uid 1001).
+  # Reuses the already-pulled node image to avoid an extra Docker Hub fetch.
+  openmaic-data-init:
+    image: node:22-alpine
+    restart: "no"
+    user: "0:0"
+    entrypoint: ["sh", "-c"]
+    command:
+      - "mkdir -p /data/classroom-jobs /data/classrooms && chown -R 1001:1001 /data"
+    volumes:
+      - openmaic-data:/data
+    networks:
+      - innate
+
   # OpenMAIC is built from the checked-out v0.3.1 source. PostgreSQL persistence
   # is enabled at build time; generated classroom JSON/media still live in
   # /app/data and are persisted by openmaic-data.
@@ -44,10 +93,20 @@ services:
     environment:
       DATABASE_URL: postgresql://innate:${POSTGRES_PASSWORD:-innate-local-dev}@postgres:5432/openmaic
       PERSISTENCE_DEV_TOKEN: ${OPENMAIC_PERSISTENCE_TOKEN:-openmaic-local-dev}
+      # OpenAI-compatible path (e.g. MiniMax /v1). Optional when DEFAULT_MODEL is anthropic:*.
       OPENAI_API_KEY: ${LLM_API_KEY:-}
       OPENAI_BASE_URL: ${LLM_BASE_URL:-https://api.openai.com/v1}
       OPENAI_MODELS: ${LLM_MODEL:-gpt-5.4-mini}
-      DEFAULT_MODEL: openai:${LLM_MODEL:-gpt-5.4-mini}
+      # Anthropic-compatible path (e.g. Volcengine Ark Claude endpoints).
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      ANTHROPIC_BASE_URL: ${ANTHROPIC_BASE_URL:-}
+      ANTHROPIC_MODELS: ${ANTHROPIC_MODELS:-}
+      # Native Xiaomi / MiMo OpenAI-compatible Token Plan (/v1), not the Claude URL.
+      XIAOMI_API_KEY: ${XIAOMI_API_KEY:-}
+      XIAOMI_BASE_URL: ${XIAOMI_BASE_URL:-}
+      XIAOMI_MODELS: ${XIAOMI_MODELS:-}
+      # Full provider:model id. Examples: openai:MiniMax-M3, anthropic:glm-5.2, xiaomi:mimo-v2.5-pro
+      DEFAULT_MODEL: ${DEFAULT_MODEL:-openai:${LLM_MODEL:-gpt-5.4-mini}}
       ACCESS_CODE: ${OPENMAIC_ACCESS_CODE:-}
       TZ: ${TZ:-Asia/Shanghai}
     ports:
@@ -57,6 +116,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      openmaic-data-init:
+        condition: service_completed_successfully
     healthcheck:
       test:
         [
@@ -136,7 +197,7 @@ services:
   # DeepTutor persists its workspace, KB pointers, memory and settings in its
   # own volume; it does not use PostgreSQL as its primary store.
   deeptutor:
-    image: ${DEEPTUTOR_IMAGE:-ghcr.io/hkuds/deeptutor:1.5.9}
+    image: ${DEEPTUTOR_IMAGE:-ghcr.io/hkuds/deeptutor:1.5.10}
     restart: unless-stopped
     environment:
       TZ: ${TZ:-Asia/Shanghai}

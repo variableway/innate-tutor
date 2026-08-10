@@ -36,8 +36,9 @@ InnateTutor 的产品闭环应定义为：
 
 | 项目 | 版本 / Commit | 本地状态 | 关键事实 |
 | --- | --- | --- | --- |
-| DeepTutor | v1.5.9 / `37c3db6df7e886aee4f61c97ec5e618b8ab379e8` | `main` clean | 有稳定 `DeepTutorApp` facade、统一 `/api/v1/ws`、多用户上下文、RAG/Memory；核心数据仍强依赖工作区文件布局 |
-| OpenMAIC | v0.3.1 / `9556a035b13724b11e575818910d817264a74d4e` | `main` clean | 已发布 5 个 npm 包；完整 Scene 生成、Player、多 Agent 与媒体仍主要位于应用内部；一键生成任务仍是进程内执行 + 本地文件状态 |
+| DeepTutor | v1.5.10 / `8865da7c6d51d579db66ad123fcf3f16a2eed0a4` | `main`（2026-08-08 已同步 upstream） | 有稳定 `DeepTutorApp` facade、统一 `/api/v1/ws`、多用户上下文、RAG/Memory；Compose 使用 `ghcr.io/hkuds/deeptutor:1.5.10` |
+| OpenMAIC | v0.3.1 / `b4834f5c74bd26554ec0de95169e5a0e4786399d` | `main`（2026-08-08 已同步 upstream） | 已发布 5 个 npm 包；完整 Scene 生成、Player 仍主要在应用内；一键生成仍是进程内任务 + 本地文件状态 |
+| Innate Catalog | monorepo `apps/web` | 2026-08-09 落地 | 薄 Catalog：元数据在 `innate` DB，经 HTTP 调 OpenMAIC；见 [实施记录](../implementation-journal.md) |
 
 关键源码证据：
 

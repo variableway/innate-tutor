@@ -1,0 +1,343 @@
+{
+  "meta": {
+    "generatedAt": "2026-08-09T20:13:34.844996+00:00",
+    "defaultModelHint": "openai:MiniMax-M3 (minimax-codex via LLM_*; Volcengine Unauthorized / Xiaomi anthropic 404 during probe)",
+    "catalogBase": "http://127.0.0.1:3100",
+    "openmaicBase": "http://127.0.0.1:3000"
+  },
+  "summary": {
+    "total": 10,
+    "passed": 7,
+    "failed": 3,
+    "passRate": 0.7,
+    "failureClasses": {
+      "provider": 3
+    },
+    "decision": "Go",
+    "rationale": [
+      "pass_rate=70% meets >=70% bar"
+    ]
+  },
+  "results": [
+    {
+      "id": "b01",
+      "kind": "knowledge",
+      "title": "F2 b01 fractions",
+      "requirement": "用 2 页中文幻灯片讲解分数的意义，初中难度，无图片视频TTS无Quiz。",
+      "ok": false,
+      "courseId": "25c7850a-2a98-4b14-8917-9a2e2a207c8b",
+      "status": "failed",
+      "classroomUrl": null,
+      "openmaicCourseId": null,
+      "openmaicJobId": "XtUujWE5WH",
+      "model": "MiniMax-M3",
+      "latency_s": 915.8,
+      "errorCode": "OPENMAIC_GENERATION_FAILED",
+      "errorMessage": "Cannot connect to API: Client network socket disconnected before secure TLS connection was established",
+      "failureClass": "provider",
+      "rubric": {
+        "dimensions": {
+          "openable": 0,
+          "scene_count": 0,
+          "chinese": 0,
+          "kind_fit": 2
+        },
+        "total": 2,
+        "max": 8,
+        "pass": false,
+        "sceneCount": 0,
+        "quizDetected": false,
+        "chineseDetected": false
+      },
+      "apiOk": false
+    },
+    {
+      "id": "b02",
+      "kind": "quiz",
+      "title": "F2 b02 percent quiz",
+      "requirement": "2 场景中文短课：百分比概念讲解 + 1 道三选一 Quiz。关闭媒体。",
+      "ok": true,
+      "courseId": "23df995d-639c-485f-b05f-d24ed6a8cb87",
+      "status": "succeeded",
+      "classroomUrl": "http://localhost:3000/classroom/s2wgRdKQ1m",
+      "openmaicCourseId": "s2wgRdKQ1m",
+      "openmaicJobId": "H1qBFTjyv9",
+      "model": "MiniMax-M3",
+      "latency_s": 271.6,
+      "errorCode": null,
+      "errorMessage": null,
+      "failureClass": null,
+      "rubric": {
+        "dimensions": {
+          "openable": 2,
+          "scene_count": 0,
+          "chinese": 2,
+          "kind_fit": 2
+        },
+        "total": 6,
+        "max": 8,
+        "pass": true,
+        "sceneCount": 0,
+        "quizDetected": true,
+        "chineseDetected": true
+      },
+      "apiOk": true
+    },
+    {
+      "id": "b03",
+      "kind": "material",
+      "title": "F2 b03 water cycle",
+      "requirement": "基于材料生成 2 页中文课（无媒体无Quiz）：水循环包括蒸发、凝结、降水。",
+      "ok": true,
+      "courseId": "76baa552-0186-43bd-aa96-f7c3704dbba4",
+      "status": "succeeded",
+      "classroomUrl": "http://localhost:3000/classroom/ko7DlEQgXq",
+      "openmaicCourseId": "ko7DlEQgXq",
+      "openmaicJobId": "ZG_ySuB9k6",
+      "model": "MiniMax-M3",
+      "latency_s": 478.0,
+      "errorCode": null,
+      "errorMessage": null,
+      "failureClass": null,
+      "rubric": {
+        "dimensions": {
+          "openable": 2,
+          "scene_count": 0,
+          "chinese": 2,
+          "kind_fit": 2
+        },
+        "total": 6,
+        "max": 8,
+        "pass": true,
+        "sceneCount": 0,
+        "quizDetected": false,
+        "chineseDetected": true
+      },
+      "apiOk": true
+    },
+    {
+      "id": "b04",
+      "kind": "knowledge",
+      "title": "F2 b04 newton1",
+      "requirement": "用 2 页中文讲解牛顿第一定律，面向高一，无媒体无Quiz。",
+      "ok": true,
+      "courseId": "5a9e40e9-0c42-48c0-9d5c-e2bc5c1a7651",
+      "status": "succeeded",
+      "classroomUrl": "http://localhost:3000/classroom/xJ4Ugib1Mq",
+      "openmaicCourseId": "xJ4Ugib1Mq",
+      "openmaicJobId": "n1MRE1aXth",
+      "model": "MiniMax-M3",
+      "latency_s": 498.1,
+      "errorCode": null,
+      "errorMessage": null,
+      "failureClass": null,
+      "rubric": {
+        "dimensions": {
+          "openable": 2,
+          "scene_count": 0,
+          "chinese": 2,
+          "kind_fit": 2
+        },
+        "total": 6,
+        "max": 8,
+        "pass": true,
+        "sceneCount": 0,
+        "quizDetected": false,
+        "chineseDetected": true
+      },
+      "apiOk": true
+    },
+    {
+      "id": "b05",
+      "kind": "quiz",
+      "title": "F2 b05 cell quiz",
+      "requirement": "2 场景：细胞结构简述 + 1 道选择题（线粒体功能）。中文，无媒体。",
+      "ok": true,
+      "courseId": "5b989362-67f6-4108-ae01-947c262536de",
+      "status": "succeeded",
+      "classroomUrl": "http://localhost:3000/classroom/A99uUPPOly",
+      "openmaicCourseId": "A99uUPPOly",
+      "openmaicJobId": "F17EazDqEg",
+      "model": "MiniMax-M3",
+      "latency_s": 155.9,
+      "errorCode": null,
+      "errorMessage": null,
+      "failureClass": null,
+      "rubric": {
+        "dimensions": {
+          "openable": 2,
+          "scene_count": 0,
+          "chinese": 2,
+          "kind_fit": 2
+        },
+        "total": 6,
+        "max": 8,
+        "pass": true,
+        "sceneCount": 0,
+        "quizDetected": true,
+        "chineseDetected": true
+      },
+      "apiOk": true
+    },
+    {
+      "id": "b06",
+      "kind": "material",
+      "title": "F2 b06 supply demand",
+      "requirement": "基于材料生成 2 页中文课：供给增加通常使均衡价格下降，需求增加通常使均衡价格上升。无媒体。",
+      "ok": false,
+      "courseId": "6a9f1b9d-2685-4c23-9013-92e0daf79729",
+      "status": "failed",
+      "classroomUrl": null,
+      "openmaicCourseId": null,
+      "openmaicJobId": "pJ_JQB3Nbn",
+      "model": "MiniMax-M3",
+      "latency_s": 1825.8,
+      "errorCode": "OPENMAIC_GENERATION_FAILED",
+      "errorMessage": "Cannot connect to API: Headers Timeout Error",
+      "failureClass": "provider",
+      "rubric": {
+        "dimensions": {
+          "openable": 0,
+          "scene_count": 0,
+          "chinese": 0,
+          "kind_fit": 2
+        },
+        "total": 2,
+        "max": 8,
+        "pass": false,
+        "sceneCount": 0,
+        "quizDetected": false,
+        "chineseDetected": false
+      },
+      "apiOk": false
+    },
+    {
+      "id": "b07",
+      "kind": "knowledge",
+      "title": "F2 b07 binary",
+      "requirement": "用 2 页中文讲解二进制与十进制互转入门，无媒体无Quiz。",
+      "ok": true,
+      "courseId": "a77dff7c-e266-481c-8533-1aaf6953b31d",
+      "status": "succeeded",
+      "classroomUrl": "http://localhost:3000/classroom/_cWY_tW9JT",
+      "openmaicCourseId": "_cWY_tW9JT",
+      "openmaicJobId": "b_kQ2UDGap",
+      "model": "MiniMax-M3",
+      "latency_s": 830.4,
+      "errorCode": null,
+      "errorMessage": null,
+      "failureClass": null,
+      "rubric": {
+        "dimensions": {
+          "openable": 2,
+          "scene_count": 0,
+          "chinese": 2,
+          "kind_fit": 2
+        },
+        "total": 6,
+        "max": 8,
+        "pass": true,
+        "sceneCount": 0,
+        "quizDetected": false,
+        "chineseDetected": true
+      },
+      "apiOk": true
+    },
+    {
+      "id": "b08",
+      "kind": "quiz",
+      "title": "F2 b08 pythagoras",
+      "requirement": "2 场景中文：勾股定理公式讲解 + 1 道简单计算选择题。无媒体。",
+      "ok": true,
+      "courseId": "18a77cb9-7dc9-4b62-be5e-dbd88163cf04",
+      "status": "succeeded",
+      "classroomUrl": "http://localhost:3000/classroom/unnWFwGw2V",
+      "openmaicCourseId": "unnWFwGw2V",
+      "openmaicJobId": "rZ5XUgTXcf",
+      "model": "MiniMax-M3",
+      "latency_s": 201.3,
+      "errorCode": null,
+      "errorMessage": null,
+      "failureClass": null,
+      "rubric": {
+        "dimensions": {
+          "openable": 2,
+          "scene_count": 0,
+          "chinese": 2,
+          "kind_fit": 2
+        },
+        "total": 6,
+        "max": 8,
+        "pass": true,
+        "sceneCount": 0,
+        "quizDetected": true,
+        "chineseDetected": true
+      },
+      "apiOk": true
+    },
+    {
+      "id": "b09",
+      "kind": "material",
+      "title": "F2 b09 photosynthesis",
+      "requirement": "基于材料生成 2 页中文课：光合作用在叶绿体中把二氧化碳和水转化为有机物并释放氧气。无媒体。",
+      "ok": true,
+      "courseId": "fe61a70b-4b69-4fa4-be48-eb0c28ab61d4",
+      "status": "succeeded",
+      "classroomUrl": "http://localhost:3000/classroom/-qkAD3iu0D",
+      "openmaicCourseId": "-qkAD3iu0D",
+      "openmaicJobId": "Kb_VY1lc4T",
+      "model": "MiniMax-M3",
+      "latency_s": 568.5,
+      "errorCode": null,
+      "errorMessage": null,
+      "failureClass": null,
+      "rubric": {
+        "dimensions": {
+          "openable": 2,
+          "scene_count": 0,
+          "chinese": 2,
+          "kind_fit": 2
+        },
+        "total": 6,
+        "max": 8,
+        "pass": true,
+        "sceneCount": 0,
+        "quizDetected": false,
+        "chineseDetected": true
+      },
+      "apiOk": true
+    },
+    {
+      "id": "b10",
+      "kind": "knowledge",
+      "title": "F2 b10 thesis",
+      "requirement": "用 2 页中文讲解议论文三要素（论点、论据、论证），无媒体无Quiz。",
+      "ok": false,
+      "courseId": "439e6e04-e040-4237-82ba-3e35a4ed5984",
+      "status": "failed",
+      "classroomUrl": null,
+      "openmaicCourseId": null,
+      "openmaicJobId": "jC1cEds_Zm",
+      "model": "MiniMax-M3",
+      "latency_s": 1373.6,
+      "errorCode": "OPENMAIC_GENERATION_FAILED",
+      "errorMessage": "Cannot connect to API: Client network socket disconnected before secure TLS connection was established",
+      "failureClass": "provider",
+      "rubric": {
+        "dimensions": {
+          "openable": 0,
+          "scene_count": 0,
+          "chinese": 0,
+          "kind_fit": 2
+        },
+        "total": 2,
+        "max": 8,
+        "pass": false,
+        "sceneCount": 0,
+        "quizDetected": false,
+        "chineseDetected": false
+      },
+      "apiOk": false
+    }
+  ]
+}

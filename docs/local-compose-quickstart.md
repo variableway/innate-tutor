@@ -4,15 +4,16 @@
 
 该 Compose 用于快速验证，不修改两个上游项目代码：
 
+- Catalog（`apps/web`）是自研薄目录：提交生成、轮询状态、打开 Player，元数据写入 `innate` 库；
 - OpenMAIC 从当前源码构建，负责课程生成和课堂播放；
-- DeepTutor 使用固定的 `1.5.9` 预构建镜像，负责独立 Tutor/RAG 验证；
+- DeepTutor 使用固定的 `1.5.10` 预构建镜像，负责独立 Tutor/RAG 验证；
 - PostgreSQL 是一个实例、三个逻辑数据库：`innate`、`openmaic`、`lightrag`；
-- 默认不启动 RAG，OpenMAIC 和 DeepTutor 可以独立完成快速生成与当前场景问答；
+- 默认不启动 RAG，OpenMAIC、Catalog 和 DeepTutor 可以独立完成快速生成与当前场景问答；
 - LightRAG 是可选 profile，向 DeepTutor 和未来的 Producer/Agent Adapter 提供 HTTP 契约；
 - DeepTutor 的工作区、Memory 和配置仍保存在自己的 volume，不会因为同一 Compose 就自动进入 PostgreSQL；
 - OpenMAIC 当前不会自动调用 LightRAG，Compose 只准备服务，不能替代 Adapter。
 
-这满足“生成课程”和“集成两项目”可以分别执行：只启动 OpenMAIC 也能生成课程；DeepTutor/LightRAG 的配置或故障不阻塞这条链路。
+这满足“生成课程”和“集成两项目”可以分别执行：只启动 OpenMAIC 也能生成课程；经 Catalog 提交时 OpenMAIC 故障只影响生成/打开，不拖垮目录列表。
 
 ## 2. 文件
 
@@ -28,13 +29,31 @@
 cp .env.example .env
 ```
 
-默认无 RAG 模式至少填写：
+默认无 RAG 模式至少填写其一：
 
 ```dotenv
+# OpenAI-compatible (e.g. MiniMax /v1)
+DEFAULT_MODEL=openai:MiniMax-M3
 LLM_API_KEY=...
-LLM_BASE_URL=https://api.openai.com/v1
-LLM_MODEL=gpt-5.4-mini
+LLM_BASE_URL=https://api.minimaxi.com/v1
+LLM_MODEL=MiniMax-M3
+
+# Or Anthropic-compatible (Volcengine Ark Claude endpoint; probe previously Unauthorized)
+# DEFAULT_MODEL=anthropic:glm-5.2
+# ANTHROPIC_API_KEY=...
+# ANTHROPIC_BASE_URL=https://ark.cn-beijing.volces.com/api/plan
+# ANTHROPIC_MODELS=glm-5.2
+
+# Or Xiaomi/MiMo Token Plan OpenAI-compatible (/v1 — not the Claude /anthropic URL)
+# DEFAULT_MODEL=xiaomi:mimo-v2.5-pro
+# XIAOMI_API_KEY=...
+# XIAOMI_BASE_URL=https://token-plan-cn.xiaomimimo.com/v1
+# XIAOMI_MODELS=mimo-v2.5-pro
 ```
+
+Local tip: copy keys from `innate-aiswitcher` (`%USERPROFILE%\.innate-aiswitcher\pb_data\data.db`)
+providers such as `minimax-codex`, `volcengine-claude`, or `xiaomi-claude`.
+For Xiaomi in OpenMAIC, prefer native `XIAOMI_*` + `/v1`. Do not commit `.env`.
 
 只有启用内置 LightRAG 时才需要填写：
 
@@ -50,21 +69,24 @@ LIGHTRAG_API_KEY=...
 
 ```bash
 # 最小课程生成路径；不启动 DeepTutor 和 LightRAG
-docker compose up -d postgres openmaic
+docker compose up -d postgres openmaic catalog
 
-# 默认第一阶段：OpenMAIC + DeepTutor，不启动 RAG
+# 默认第一阶段：Catalog + OpenMAIC + DeepTutor，不启动 RAG
 docker compose up -d
 
 # 可选：额外安装并启动内置 LightRAG
 docker compose --profile rag-lightrag up -d
 ```
 
-OpenMAIC 从源码构建，第一次启动耗时和磁盘占用会明显高于后续启动。DeepTutor 使用预构建镜像，避免本地构建其 Python/Next.js 全量依赖。
+本地开发 Catalog（不经 Docker）可在仓库根目录执行 `pnpm install && pnpm --filter @innate/web dev`，默认 `http://localhost:3100`。
+
+OpenMAIC / Catalog 从源码构建，第一次启动耗时和磁盘占用会明显高于后续启动。DeepTutor 使用预构建镜像，避免本地构建其 Python/Next.js 全量依赖。
 
 ## 4. 地址
 
 | 服务 | 地址 | 用途 |
 | --- | --- | --- |
+| Catalog | `http://localhost:3100` | 提交生成、列表、详情、打开 Player |
 | OpenMAIC | `http://localhost:3000` | 生成、查看和导出课程 |
 | DeepTutor | `http://localhost:3782` | Tutor、KB、模型配置 |
 | DeepTutor API | `http://localhost:8001` | `/api/v1/ws` 等接口 |
@@ -75,11 +97,12 @@ OpenMAIC 从源码构建，第一次启动耗时和磁盘占用会明显高于�
 
 ## 5. 默认第一阶段：无 RAG
 
-1. 打开 OpenMAIC，生成一个无媒体或低媒体的短课程。
-2. 记录生成任务 ID、课程 ID 和 `/classroom/{courseId}` URL。
-3. 打开 DeepTutor，在模型设置中只配置 LLM；无 RAG 问答不要求 Embedding。
-4. 用课程标题、当前 scene 正文和选中文字验证 DeepTutor 问答。
-5. 不创建或连接 Knowledge Base，不对回答承诺原始资料引用。
+1. 打开 Catalog（`http://localhost:3100`），提交一个无媒体短主题，或点“提交 3 个 Smoke”。
+2. 在列表中等待 `running → succeeded`，确认 job/course/URL/latency 已记录。
+3. 点“打开 Player”在新窗口进入 OpenMAIC classroom；OpenMAIC 不可达时 Catalog 列表仍应可浏览。
+4. 打开 DeepTutor，在模型设置中只配置 LLM；无 RAG 问答不要求 Embedding。
+5. 用课程标题、当前 scene 正文和选中文字验证 DeepTutor 问答。
+6. 不创建或连接 Knowledge Base，不对回答承诺原始资料引用。
 
 此模式适合主题生成、短材料和产品价值验证。OpenMAIC Player、Catalog、课程 URL、Quiz 和普通 DeepTutor Chat 不依赖 RAG。
 

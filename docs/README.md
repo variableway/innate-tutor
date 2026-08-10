@@ -5,8 +5,32 @@
 1. `refined/`：基于 2026-08-06 本地源码逐项核验后的推荐执行基线。
 2. 原有分析文档：保留为调研记录和方案演进历史，不再直接作为排期或架构承诺。
 
+## 项目管理与实施记录
+
+本仓库使用 [Backlog.md](https://github.com/MrLesk/Backlog.md) 管理执行任务、过程文档与决策（目录 `backlog/`，前缀 `INN-`）。
+
+```bash
+npx backlog.md@latest task list --plain
+npx backlog.md@latest doc list --plain
+npx backlog.md@latest board
+npx backlog.md@latest browser
+```
+
+| 记录 | 路径 |
+| --- | --- |
+| 实施记录索引 | [implementation-journal.md](./implementation-journal.md) |
+| 任务看板 | `backlog/tasks/`（F0 Done → Track A/B） |
+| 过程日志 / 架构笔记 | `backlog/docs/` |
+| 决策 | `backlog/decisions/`（如 `decision-2`…`decision-6`） |
+| CourseArtifact v0 | [contracts/course-artifact-v0.md](./contracts/course-artifact-v0.md) |
+| Track B fixture | `fixtures/course-artifacts/` |
+
+自研代码位于 `apps/web`（Catalog）与 `packages/*`；本地 Compose 中 Catalog 地址为 `http://localhost:3100`。
+
 ## 推荐从这里开始
 
+- [实施记录索引](./implementation-journal.md)
+- [CourseArtifact v0](./contracts/course-artifact-v0.md)
 - [Refined Plan 总览](./refined/README.md)
 - [总体目标与范围](./refined/01-goals-and-scope.md)
 - [可行性评估与修正建议](./refined/02-feasibility-assessment.md)
