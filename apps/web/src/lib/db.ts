@@ -23,6 +23,10 @@ CREATE TABLE IF NOT EXISTS catalog_courses (
   started_at TIMESTAMPTZ,
   finished_at TIMESTAMPTZ,
   latency_ms INTEGER,
+  course_version_id TEXT,
+  artifact_id TEXT,
+  artifact_checksum TEXT,
+  artifact_path TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -46,6 +50,15 @@ CREATE TABLE IF NOT EXISTS catalog_generation_events (
 
 CREATE INDEX IF NOT EXISTS catalog_generation_events_course_id_idx
   ON catalog_generation_events (course_id, created_at DESC);
+
+ALTER TABLE catalog_courses
+  ADD COLUMN IF NOT EXISTS course_version_id TEXT,
+  ADD COLUMN IF NOT EXISTS artifact_id TEXT,
+  ADD COLUMN IF NOT EXISTS artifact_checksum TEXT,
+  ADD COLUMN IF NOT EXISTS artifact_path TEXT;
+
+CREATE INDEX IF NOT EXISTS catalog_courses_course_version_id_idx
+  ON catalog_courses (course_version_id);
 `;
 
 declare global {
@@ -88,6 +101,10 @@ interface CatalogCourseRow {
   started_at: Date | null;
   finished_at: Date | null;
   latency_ms: number | null;
+  course_version_id: string | null;
+  artifact_id: string | null;
+  artifact_checksum: string | null;
+  artifact_path: string | null;
   created_at: Date;
   updated_at: Date;
 }
@@ -114,6 +131,10 @@ export function mapCourse(row: CatalogCourseRow): CatalogCourse {
     startedAt: toIso(row.started_at),
     finishedAt: toIso(row.finished_at),
     latencyMs: row.latency_ms,
+    courseVersionId: row.course_version_id ?? null,
+    artifactId: row.artifact_id ?? null,
+    artifactChecksum: row.artifact_checksum ?? null,
+    artifactPath: row.artifact_path ?? null,
     createdAt: row.created_at.toISOString(),
     updatedAt: row.updated_at.toISOString(),
   };
@@ -169,6 +190,10 @@ export async function updateCourse(
     startedAt: Date | null;
     finishedAt: Date | null;
     latencyMs: number | null;
+    courseVersionId: string | null;
+    artifactId: string | null;
+    artifactChecksum: string | null;
+    artifactPath: string | null;
   }>,
 ): Promise<CatalogCourse> {
   await ensureCatalogSchema();
@@ -187,6 +212,10 @@ export async function updateCourse(
       started_at = COALESCE($12, started_at),
       finished_at = COALESCE($13, finished_at),
       latency_ms = COALESCE($14, latency_ms),
+      course_version_id = COALESCE($15, course_version_id),
+      artifact_id = COALESCE($16, artifact_id),
+      artifact_checksum = COALESCE($17, artifact_checksum),
+      artifact_path = COALESCE($18, artifact_path),
       updated_at = NOW()
     WHERE id = $1
     RETURNING *`,
@@ -205,6 +234,10 @@ export async function updateCourse(
       patch.startedAt ?? null,
       patch.finishedAt ?? null,
       patch.latencyMs ?? null,
+      patch.courseVersionId ?? null,
+      patch.artifactId ?? null,
+      patch.artifactChecksum ?? null,
+      patch.artifactPath ?? null,
     ],
   );
   if (!rows[0]) {

@@ -36,9 +36,14 @@ services:
       OPENMAIC_BASE_URL: http://openmaic:3000
       NEXT_PUBLIC_OPENMAIC_URL: http://localhost:${OPENMAIC_PORT:-3000}
       LLM_MODEL: ${LLM_MODEL:-gpt-5.4-mini}
+      # DeepTutor listens on 8001 inside the container network.
+      DEEPTUTOR_WS_URL: ws://deeptutor:8001/api/v1/ws
+      ARTIFACT_STORE_DIR: /data/course-artifacts
       TZ: ${TZ:-Asia/Shanghai}
     ports:
       - "127.0.0.1:${CATALOG_PORT:-3100}:3000"
+    volumes:
+      - catalog-artifacts:/data/course-artifacts
     depends_on:
       postgres:
         condition: service_healthy
@@ -224,3 +229,4 @@ volumes:
   openmaic-data:
   lightrag-data:
   deeptutor-data:
+  catalog-artifacts:

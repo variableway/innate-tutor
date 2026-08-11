@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@innate/contracts": "workspace:*",
+    "@innate/deeptutor-adapter": "workspace:*",
     "@innate/openmaic-adapter": "workspace:*",
     "next": "^15.5.2",
     "pg": "^8.16.3",

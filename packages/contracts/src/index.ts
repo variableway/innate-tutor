@@ -1,4 +1,5 @@
 export * from "./course-artifact.js";
+export * from "./tutor-context.js";
 
 export type CatalogCourseStatus = "queued" | "running" | "succeeded" | "failed";
 
@@ -19,6 +20,11 @@ export interface CatalogCourse {
   startedAt: string | null;
   finishedAt: string | null;
   latencyMs: number | null;
+  /** Immutable CourseArtifact courseVersionId when snapshotted. */
+  courseVersionId: string | null;
+  artifactId: string | null;
+  artifactChecksum: string | null;
+  artifactPath: string | null;
   createdAt: string;
   updatedAt: string;
 }

@@ -1,0 +1,125 @@
+# Opt-in platform profiles that reuse the existing innate Postgres network.
+# Does not replace Catalog/OpenMAIC/DeepTutor. Aligns with refined architecture:
+# OIDC IdP + object-store on top of the shared PostgreSQL instance.
+#
+# Usage (from repo root, with .env present):
+#   docker compose -f compose.yaml -f compose.profiles.platform.yaml \
+#     --profile object-store --profile idp up -d
+#
+# Existing Postgres volumes need the optional DBs once:
+#   docker compose exec -T postgres psql -U innate -d innate \
+#     < infra/postgres/ensure-platform-databases.sql
+
+services:
+  minio:
+    profiles: ["object-store"]
+    image: minio/minio:RELEASE.2025-09-07T16-13-09Z
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-innate-minio}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-innate-minio-local-dev}
+    ports:
+      - "127.0.0.1:${MINIO_API_PORT:-9000}:9000"
+      - "127.0.0.1:${MINIO_CONSOLE_PORT:-9001}:9001"
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      # Official MinIO server image supports this probe.
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    networks:
+      - innate
+
+  # Creates the default bucket used by local spikes. Safe to re-run.
+  minio-init:
+    profiles: ["object-store"]
+    image: minio/mc:RELEASE.2025-08-13T08-35-41Z
+    restart: "no"
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        set -e
+        mc alias set local http://minio:9000 "$${MINIO_ROOT_USER}" "$${MINIO_ROOT_PASSWORD}"
+        mc mb --ignore-existing local/"$${MINIO_BUCKET:-innate}"
+        mc anonymous set download local/"$${MINIO_BUCKET:-innate}/public" || true
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-innate-minio}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-innate-minio-local-dev}
+      MINIO_BUCKET: ${MINIO_BUCKET:-innate}
+    networks:
+      - innate
+
+  authentik-server:
+    profiles: ["idp"]
+    image: ${AUTHENTIK_IMAGE:-ghcr.io/goauthentik/server}:${AUTHENTIK_TAG:-2025.10.0}
+    restart: unless-stopped
+    command: server
+    environment:
+      AUTHENTIK_SECRET_KEY: ${AUTHENTIK_SECRET_KEY:-change-me-authentik-local-dev-secret-key-32b}
+      AUTHENTIK_POSTGRESQL__HOST: postgres
+      AUTHENTIK_POSTGRESQL__PORT: 5432
+      AUTHENTIK_POSTGRESQL__USER: innate
+      AUTHENTIK_POSTGRESQL__NAME: authentik
+      AUTHENTIK_POSTGRESQL__PASSWORD: ${POSTGRES_PASSWORD:-innate-local-dev}
+      AUTHENTIK_ERROR_REPORTING__ENABLED: "false"
+    ports:
+      - "127.0.0.1:${AUTHENTIK_PORT_HTTP:-9002}:9000"
+      - "127.0.0.1:${AUTHENTIK_PORT_HTTPS:-9443}:9443"
+    volumes:
+      - authentik-media:/media
+      - authentik-templates:/templates
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "ak",
+          "healthcheck",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 90s
+    networks:
+      - innate
+
+  authentik-worker:
+    profiles: ["idp"]
+    image: ${AUTHENTIK_IMAGE:-ghcr.io/goauthentik/server}:${AUTHENTIK_TAG:-2025.10.0}
+    restart: unless-stopped
+    command: worker
+    user: root
+    environment:
+      AUTHENTIK_SECRET_KEY: ${AUTHENTIK_SECRET_KEY:-change-me-authentik-local-dev-secret-key-32b}
+      AUTHENTIK_POSTGRESQL__HOST: postgres
+      AUTHENTIK_POSTGRESQL__PORT: 5432
+      AUTHENTIK_POSTGRESQL__USER: innate
+      AUTHENTIK_POSTGRESQL__NAME: authentik
+      AUTHENTIK_POSTGRESQL__PASSWORD: ${POSTGRES_PASSWORD:-innate-local-dev}
+      AUTHENTIK_ERROR_REPORTING__ENABLED: "false"
+    volumes:
+      - authentik-media:/media
+      - authentik-templates:/templates
+      - authentik-certs:/certs
+    depends_on:
+      postgres:
+        condition: service_healthy
+      authentik-server:
+        condition: service_started
+    networks:
+      - innate
+
+volumes:
+  minio-data:
+  authentik-media:
+  authentik-templates:
+  authentik-certs:

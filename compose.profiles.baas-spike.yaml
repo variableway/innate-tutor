@@ -1,0 +1,59 @@
+# Experimental BaaS spike profiles. These are intentionally isolated from
+# innate / openmaic / lightrag business data.
+#
+# Decision summary (see docs/local-compose-quickstart.md §10):
+# - Prefer compose.profiles.platform.yaml (Authentik + MinIO) for the product path.
+# - Nubase is useful to evaluate AI Memory / MCP / multi-project Studio UX.
+# - Full self-hosted Supabase is NOT merged here: it expects supabase/postgres,
+#   ~10+ containers, and fights the current pg16 + three-DB contract. Run the
+#   official supabase/docker stack in a separate directory if you need a
+#   feature comparison.
+#
+# Nubase all-in-one ships its own Postgres 15 + Redis. We only publish Studio/API
+# on loopback:9999 and do NOT map its embedded 5432 (avoids colliding with the
+# innate postgres service).
+#
+# Usage:
+#   docker compose -f compose.yaml -f compose.profiles.baas-spike.yaml \
+#     --profile baas-nubase up -d
+
+services:
+  nubase:
+    profiles: ["baas-nubase"]
+    image: ${NUBASE_IMAGE:-ottermind/nubase:latest}
+    restart: unless-stopped
+    environment:
+      PGRST_ENCRYPTION_MASTER_KEY: ${NUBASE_PGRST_ENCRYPTION_MASTER_KEY:-nubase-local-dev-master-key-change-me}
+      METADATA_SERVICE_ROLE_KEY: ${NUBASE_METADATA_SERVICE_ROLE_KEY:-nubase-local-dev-metadata-service-role}
+      NUBASE_PLATFORM_EMAIL_VERIFICATION_ENABLED: "false"
+      # Optional: point Memory/AI gateway at the same LLM keys as OpenMAIC.
+      OPENAI_API_KEY: ${LLM_API_KEY:-}
+      OPENAI_BASE_URL: ${LLM_BASE_URL:-https://api.openai.com/v1}
+      # Optional: reuse MinIO from compose.profiles.platform.yaml object-store.
+      R2_ACCOUNT_ID: ${NUBASE_R2_ACCOUNT_ID:-local}
+      R2_ACCESS_KEY_ID: ${MINIO_ROOT_USER:-innate-minio}
+      R2_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD:-innate-minio-local-dev}
+      R2_ENDPOINT: ${NUBASE_R2_ENDPOINT:-http://minio:9000}
+      R2_PUBLIC_URL: ${NUBASE_R2_PUBLIC_URL:-http://127.0.0.1:9000}
+      R2_GLOBAL_BUCKET: ${MINIO_BUCKET:-innate}
+    ports:
+      - "127.0.0.1:${NUBASE_PORT:-9999}:9999"
+    volumes:
+      - nubase-data:/data
+    # Join the innate network so Nubase can optionally reach MinIO.
+    # It still uses its embedded Postgres for metadata/project DBs.
+    networks:
+      - innate
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget -qO- http://127.0.0.1:9999/auth/v1/health >/dev/null 2>&1 || exit 1",
+        ]
+      interval: 20s
+      timeout: 5s
+      retries: 15
+      start_period: 90s
+
+volumes:
+  nubase-data:

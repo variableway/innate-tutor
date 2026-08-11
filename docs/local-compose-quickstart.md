@@ -18,8 +18,11 @@
 ## 2. 文件
 
 - 根目录 [`compose.yaml`](../compose.yaml)
+- 根目录 [`compose.profiles.platform.yaml`](../compose.profiles.platform.yaml)（可选：Authentik + MinIO）
+- 根目录 [`compose.profiles.baas-spike.yaml`](../compose.profiles.baas-spike.yaml)（可选：隔离 Nubase 试验）
 - 根目录 [`.env.example`](../.env.example)
 - PostgreSQL 初始化脚本 [`01-create-databases.sql`](../infra/postgres/init/01-create-databases.sql)
+- 可选平台库 [`02-platform-databases.sql`](../infra/postgres/init/02-platform-databases.sql) / [`ensure-platform-databases.sql`](../infra/postgres/ensure-platform-databases.sql)
 
 ## 3. 首次启动（需要执行时）
 
@@ -92,6 +95,9 @@ OpenMAIC / Catalog 从源码构建，第一次启动耗时和磁盘占用会明�
 | DeepTutor API | `http://localhost:8001` | `/api/v1/ws` 等接口 |
 | LightRAG（可选） | `http://localhost:9621` | `rag-lightrag` profile 的 RAG Web/API |
 | PostgreSQL | `localhost:5432` | 本地诊断；服务间使用 `postgres:5432` |
+| MinIO（可选） | `http://localhost:9000` / `:9001` | `object-store` profile |
+| Authentik（可选） | `http://localhost:9002` | `idp` profile |
+| Nubase（可选试验） | `http://localhost:9999/studio` | `baas-nubase` profile |
 
 所有端口只绑定 `127.0.0.1`，默认不对局域网或公网开放。
 
@@ -150,7 +156,67 @@ OpenMAIC / Catalog 从源码构建，第一次启动耗时和磁盘占用会明�
 - LightRAG 只有一个 `WORKSPACE=innate_shared`；需要多知识域隔离时再设计 workspace/instance 策略。
 - 课程生成要使用 RAG，需要 Producer Adapter 先检索 LightRAG，再把 GroundingBundle 送入 OpenMAIC；当前 Compose 不会自动完成。
 
-## 9. 停止与清理
+## 9. 可选平台能力（OIDC + Object Store）与 BaaS 试验
+
+在现有 `pgvector/pg16` 上**可以叠加**类似 Supabase/Nubase 的能力，但产品路径与完整 BaaS 栈不同：
+
+| 路径 | Compose 文件 | 用途 |
+| --- | --- | --- |
+| 产品对齐 | [`compose.profiles.platform.yaml`](../compose.profiles.platform.yaml) | Authentik（OIDC）+ MinIO；复用同一 Postgres 实例上的逻辑库 |
+| BaaS 试验 | [`compose.profiles.baas-spike.yaml`](../compose.profiles.baas-spike.yaml) | 隔离的 Nubase（自带 PG15）；评估 Memory / MCP / Studio |
+| 完整 Supabase | 不并入本仓库 | 官方 `supabase/docker` 需要自带 Postgres 镜像与大量角色/schema；与当前三库契约冲突，请单独目录对照 |
+
+### 9.1 启动 Authentik + MinIO
+
+已有 Postgres volume 时先补库：
+
+```bash
+docker compose up -d postgres
+docker compose exec -T postgres psql -U innate -d innate \
+  < infra/postgres/ensure-platform-databases.sql
+```
+
+然后：
+
+```bash
+docker compose -f compose.yaml -f compose.profiles.platform.yaml \
+  --profile object-store --profile idp up -d
+```
+
+| 服务 | 地址 |
+| --- | --- |
+| MinIO API | `http://localhost:9000` |
+| MinIO Console | `http://localhost:9001` |
+| Authentik | `http://localhost:9002`（首次按官方流程创建管理员） |
+
+Catalog / OpenMAIC **尚未**自动接入这些服务；此 profile 只准备基础设施，供 P0-10 / P1-06 Identity 与 Object Store 接线。
+
+### 9.2 启动 Nubase 试验
+
+```bash
+docker compose -f compose.yaml -f compose.profiles.baas-spike.yaml \
+  --profile baas-nubase up -d
+```
+
+Studio/API：`http://localhost:9999/studio`。Nubase all-in-one 使用**内嵌** Postgres，不映射宿主机 `5432`，也不读写 `innate`/`openmaic`/`lightrag`。若同时启用 `object-store`，可通过 `.env` 中的 `NUBASE_R2_*` 指向 MinIO。
+
+### 9.3 为何不把完整 Supabase 挂进现有库
+
+- 官方栈默认 `supabase/postgres`（扩展、角色、`auth`/`storage` schema），不是裸 `pgvector:pg16`。
+- 容器数量与内存成本高，且与「一实例三逻辑库、上游不共享表」的约定冲突。
+- 需要 Auth / Storage / REST 时，优先走 Authentik + MinIO（+ 未来可选 PostgREST），而不是替换主库。
+
+### 9.4 本地注册 / 登录（非 OIDC）
+
+Catalog 默认 `IDENTITY_PROVIDER=local`：邮箱密码注册登录，HttpOnly session cookie，Principal 含 `tenantId` / `userId` / `idp_issuer`+`idp_subject`。日后把 provider 换成 OIDC 时，只换认证入口，会话层与业务鉴权仍读同一 `Principal`。
+
+- 注册：`http://localhost:3100/register`
+- 登录：`http://localhost:3100/login`
+- API：`POST /api/auth/register|login|logout`，`GET /api/auth/me`
+
+当前 Catalog 生成 API **尚未强制登录**（兼容现有 smoke）；首页已显示会话状态。
+
+## 10. 停止与清理
 
 停止但保留数据：
 

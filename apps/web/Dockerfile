@@ -11,6 +11,7 @@ COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
 COPY apps/web/package.json ./apps/web/package.json
 COPY packages/contracts/package.json ./packages/contracts/package.json
 COPY packages/openmaic-adapter/package.json ./packages/openmaic-adapter/package.json
+COPY packages/deeptutor-adapter/package.json ./packages/deeptutor-adapter/package.json
 RUN pnpm install --filter @innate/web... --frozen-lockfile
 
 FROM base AS builder
@@ -21,8 +22,10 @@ COPY --from=deps /app/packages ./packages
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
 COPY apps/web ./apps/web
 COPY packages ./packages
+COPY fixtures/course-artifacts ./fixtures/course-artifacts
 RUN pnpm --filter @innate/contracts build \
   && pnpm --filter @innate/openmaic-adapter build \
+  && pnpm --filter @innate/deeptutor-adapter build \
   && pnpm --filter @innate/web build
 
 FROM node:22-alpine AS runner
@@ -37,6 +40,7 @@ RUN addgroup --system --gid 1001 nodejs \
 COPY --from=builder /app/apps/web/public ./apps/web/public
 COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/static ./apps/web/.next/static
+COPY --from=builder --chown=nextjs:nodejs /app/fixtures/course-artifacts ./fixtures/course-artifacts
 
 USER nextjs
 EXPOSE 3000

@@ -38,6 +38,9 @@ export function CourseList({
           <div className="meta">
             job: {course.openmaicJobId ?? "—"} · course: {course.openmaicCourseId ?? "—"} ·
             latency: {formatLatency(course.latencyMs)}
+            {course.courseVersionId
+              ? ` · version: ${course.courseVersionId.slice(0, 8)}…`
+              : ""}
           </div>
           {course.errorMessage ? <div className="error-box">{course.errorMessage}</div> : null}
           <div className="actions">

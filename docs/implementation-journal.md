@@ -63,7 +63,15 @@ npx backlog.md@latest search "Catalog" --plain
 - DeepTutor LLM catalog: MiniMax from root `.env` via `scripts/t1-configure-deeptutor-llm.py` (embedding disabled).
 - 20 direct-context Q&A over `ws://127.0.0.1:8001/api/v1/ws` with `knowledge_bases: []` (`scripts/t1-scene-qa-smoke.mjs`).
 - Result: **20/20** stream success; rag event hints 0. Report: `docs/benchmarks/t1-tutor-standalone-report.md`.
-- Backlog: `INN-6` / `INN-6.1`–`6.2` Done. Next candidates: `INN-7` (optional RAG) / `INN-8` (scene adapter).
+- Backlog: `INN-6` / `INN-6.1`–`6.2` Done.
+
+### 2026-08-10 · T3 Adapter + G1 hot path + T4 Tutor Panel
+
+- Contracts: `docs/contracts/tutor-context-v0.md` + `@innate/contracts` tutor types.
+- Package: `@innate/deeptutor-adapter` (trusted assemble, WS normalize/cancel/reconnect, empty tool allowlist, player degrade helper) + unit tests.
+- Catalog: generation success snapshots CourseArtifact to `ARTIFACT_STORE_DIR`; columns `course_version_id` / artifact_*; APIs `/api/tutor/{health,context,turn}`; course detail Tutor Panel.
+- Decision: `decision-7` defer `INN-7` RAG and `INN-10` identity until after G3/G4.
+- Backlog: `INN-8` / `INN-8.1`–`8.5` + `INN-9` Done. Degradation note: `docs/benchmarks/t3-player-degrade-note.md`.
 
 详细时间线见 Backlog `doc-1`（Catalog Monorepo Implementation Journal）。
 

@@ -106,7 +106,9 @@ label {
 }
 
 textarea,
-input[type="text"] {
+input[type="text"],
+input[type="email"],
+input[type="password"] {
   width: 100%;
   border: 1px solid var(--line);
   border-radius: 12px;
@@ -220,4 +222,35 @@ textarea {
 .detail-link {
   color: var(--accent);
   font-weight: 600;
+}
+
+.auth-bar {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.65rem;
+  padding-top: 1.25rem;
+}
+
+.auth-bar-user {
+  color: var(--ink-muted);
+  font-size: 0.92rem;
+}
+
+.auth-bar-meta {
+  opacity: 0.7;
+}
+
+.auth-shell {
+  max-width: 28rem;
+}
+
+.auth-form {
+  max-width: 28rem;
+}
+
+a.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }

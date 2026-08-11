@@ -1,5 +1,6 @@
 import type { CatalogCourse } from "@innate/contracts";
 import { OpenMaicAdapterError } from "@innate/openmaic-adapter";
+import { persistCourseArtifact } from "./artifact-store";
 import { appendGenerationEvent, getCourse, updateCourse } from "./db";
 import { getOpenMaicAdapter } from "./openmaic";
 
@@ -12,6 +13,47 @@ function deriveTitle(requirement: string, fallback?: string): string {
 
 export { deriveTitle };
 
+async function snapshotArtifactIfNeeded(
+  course: CatalogCourse,
+  classroomId: string,
+): Promise<Partial<{
+  courseVersionId: string;
+  artifactId: string;
+  artifactChecksum: string;
+  artifactPath: string;
+  message: string;
+}>> {
+  if (course.courseVersionId && course.artifactId) {
+    return {};
+  }
+  try {
+    const adapter = getOpenMaicAdapter();
+    const classroom = await adapter.getClassroom(classroomId);
+    const { artifact, relativePath } = await persistCourseArtifact({
+      classroom,
+      catalogCourseId: course.id,
+      openmaicJobId: course.openmaicJobId,
+      model: course.model,
+      requirement: course.requirement,
+      generatedAt: course.finishedAt,
+    });
+    return {
+      courseVersionId: artifact.courseVersionId,
+      artifactId: artifact.id,
+      artifactChecksum: artifact.checksum,
+      artifactPath: relativePath,
+      message: `Succeeded · artifact ${artifact.id.slice(0, 8)}…`,
+    };
+  } catch (error) {
+    // Generation success must not fail because snapshot failed; record soft warning.
+    return {
+      message: `Succeeded · artifact snapshot failed: ${
+        error instanceof Error ? error.message : String(error)
+      }`,
+    };
+  }
+}
+
 export async function syncCourseFromOpenMaic(courseId: string): Promise<CatalogCourse> {
   const course = await getCourse(courseId);
   if (!course) {
@@ -21,6 +63,16 @@ export async function syncCourseFromOpenMaic(courseId: string): Promise<CatalogC
     return course;
   }
   if (course.status === "succeeded" || course.status === "failed") {
+    if (
+      course.status === "succeeded" &&
+      course.openmaicCourseId &&
+      !course.courseVersionId
+    ) {
+      const snap = await snapshotArtifactIfNeeded(course, course.openmaicCourseId);
+      if (snap.courseVersionId) {
+        return updateCourse(courseId, snap);
+      }
+    }
     return course;
   }
 
@@ -38,17 +90,29 @@ export async function syncCourseFromOpenMaic(courseId: string): Promise<CatalogC
         ? adapter.buildClassroomUrl(job.result.classroomId)
         : (job.result?.url ?? null);
 
+    let artifactPatch: Awaited<ReturnType<typeof snapshotArtifactIfNeeded>> = {};
+    if (job.status === "succeeded" && job.result?.classroomId) {
+      artifactPatch = await snapshotArtifactIfNeeded(
+        { ...course, status: "succeeded" },
+        job.result.classroomId,
+      );
+    }
+
     const updated = await updateCourse(courseId, {
       status: job.status,
       openmaicCourseId: job.result?.classroomId ?? null,
       classroomUrl,
       progress: job.progress,
       step: job.step,
-      message: job.message,
+      message: artifactPatch.message ?? job.message,
       errorCode: job.status === "failed" ? "OPENMAIC_GENERATION_FAILED" : null,
       errorMessage: job.error ?? null,
       finishedAt,
       latencyMs,
+      courseVersionId: artifactPatch.courseVersionId ?? null,
+      artifactId: artifactPatch.artifactId ?? null,
+      artifactChecksum: artifactPatch.artifactChecksum ?? null,
+      artifactPath: artifactPatch.artifactPath ?? null,
     });
 
     await appendGenerationEvent({

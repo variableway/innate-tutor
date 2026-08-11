@@ -119,8 +119,8 @@ export function CatalogHome({ initialCourses }: { initialCourses: CatalogCourse[
       <header className="hero">
         <div className="brand">InnateTutor</div>
         <p className="lede">
-          薄 Catalog：提交主题到 OpenMAIC 生成课堂，轮询状态，并在独立窗口打开 Player。
-          Catalog 只保存元数据，不复制上游状态机。
+          薄 Catalog：提交主题到 OpenMAIC 生成课堂，轮询状态，成功后快照 CourseArtifact，并在独立窗口打开
+          Player。详情页含 Tutor Panel（播放不依赖 Tutor）。
         </p>
       </header>
 
