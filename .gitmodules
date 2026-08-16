@@ -4,3 +4,7 @@
 [submodule "OpenMAIC"]
 	path = OpenMAIC
 	url = https://github.com/qdriven/OpenMAIC.git
+[submodule "lazycat-edu-apps"]
+	path = lazycat-edu-apps
+	url = https://github.com/qdriven/lazycat-edu-apps.git
+	branch = main

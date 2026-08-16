@@ -27,6 +27,12 @@ npx backlog.md@latest browser
 
 自研代码位于 `apps/web`（Catalog）与 `packages/*`；本地 Compose 中 Catalog 地址为 `http://localhost:3100`。
 
+部署与基础设施：懒猫微服（Lazycat）私有云打包仓库以 git submodule 形式接入于
+[`lazycat-edu-apps/`](../lazycat-edu-apps)（GitHub: qdriven/lazycat-edu-apps），
+内含 DeepTutor / OpenMAIC / 共享 PostgreSQL 三个 LPK 应用定义、版本锁定（`versions.env`）、
+Makefile 自动化（sync/pack/deploy/backup）与部署/运维文档；其共享 PG 方案与本仓库
+`infra/postgres` 的关系见该仓库 `docs/POSTGRES-SHARED.md`。
+
 ## 推荐从这里开始
 
 - [实施记录索引](./implementation-journal.md)
@@ -49,6 +55,7 @@ npx backlog.md@latest browser
 - [组件级新项目集成](./new-project-integration.md)
 - [三段式架构](./three-tier-architecture.md)
 - [DeepTutor 调研](./deeptutor/architecture.md)
+- [DeepTutor 深度分析与 innate-tutor 改造设计](./deeptutor/innate-tutor-redesign.md)（edu-playground 会话产出，含懒猫部署草案；其部署部分已由 `lazycat-edu-apps/` 取代）
 - [OpenMAIC 调研](./openmaic/architecture.md)
 
 原有文档中的能力清单仍有参考价值，但其中部分接口、组件成熟度、工期和生产指标与当前源码并不完全一致。涉及研发决策时，以 `refined/` 中的结论和源码基线为准。
